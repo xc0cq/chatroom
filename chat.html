@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Safe Chatroom</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #000000, #4B0082);
+        color: white;
+        margin: 0;
+        padding: 0;
+    }
+    .chat-container {
+        max-width: 800px;
+        margin: auto;
+        padding: 20px;
+    }
+    .message {
+        background: rgba(255,255,255,0.1);
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        position: relative;
+    }
+    .username {
+        font-weight: bold;
+    }
+    .username.justin {
+        background: linear-gradient(270deg, red, orange, yellow, green, blue, indigo, violet);
+        background-size: 400% 400%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: rainbow 5s ease infinite;
+    }
+    .username.mason {
+        background: linear-gradient(270deg, gold, black);
+        background-size: 400% 400%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: goldblack 5s ease infinite;
+    }
+    @keyframes rainbow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    @keyframes goldblack {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    .controls {
+        margin-top: 5px;
+    }
+    button {
+        margin-left: 5px;
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        cursor: pointer;
+    }
+    input, textarea {
+        width: calc(100% - 20px);
+        padding: 8px;
+        margin: 5px 0;
+        border: none;
+        border-radius: 4px;
+    }
+</style>
+</head>
+<body>
+<div class="chat-container">
+    <h1>Safe Chatroom</h1>
+    <div id="messages"></div>
+    <input type="text" id="username" placeholder="Username">
+    <textarea id="message" placeholder="Type your message..."></textarea>
+    <button onclick="sendMessage()">Send</button>
+</div>
+
+<script>
+const badWords = [
+    "fuck","fuk","fvck","f*ck","f#ck","shit","shyt","sh1t","sh!t",
+    "bitch","biatch","b!tch","nigger","n1gger","nigg","nigga","n1gga",
+    "cunt","asshole","dick","cock","pussy","whore","slut"
+];
+
+function censorMessage(text) {
+    let censored = text;
+    badWords.forEach(word => {
+        const pattern = new RegExp(word.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'), "gi");
+        censored = censored.replace(pattern, "****");
+    });
+    return censored;
+}
+
+let messages = [];
+
+function renderMessages() {
+    const container = document.getElementById("messages");
+    container.innerHTML = "";
+    messages.forEach((msg, index) => {
+        const div = document.createElement("div");
+        div.className = "message";
+        
+        let usernameClass = "";
+        if (msg.username.toLowerCase() === "justin") usernameClass = "justin";
+        if (msg.username.toLowerCase() === "mason") usernameClass = "mason";
+
+        div.innerHTML = `<span class="username ${usernameClass}">${msg.username}:</span> ${msg.text}
+            <div class="controls">
+                <button onclick="editMessage(${index})">Edit</button>
+                <button onclick="deleteMessage(${index})">Delete</button>
+                <button onclick="replyMessage(${index})">Reply</button>
+            </div>`;
+        
+        container.appendChild(div);
+    });
+}
+
+function sendMessage() {
+    const username = document.getElementById("username").value.trim();
+    let text = document.getElementById("message").value.trim();
+    if (!username || !text) return;
+
+    text = censorMessage(text);
+
+    messages.push({ username, text });
+    document.getElementById("message").value = "";
+    renderMessages();
+}
+
+function editMessage(index) {
+    const newText = prompt("Edit your message:", messages[index].text);
+    if (newText !== null) {
+        messages[index].text = censorMessage(newText.trim());
+        renderMessages();
+    }
+}
+
+function deleteMessage(index) {
+    if (confirm("Delete this message?")) {
+        messages.splice(index, 1);
+        renderMessages();
+    }
+}
+
+function replyMessage(index) {
+    const replyTo = messages[index].username;
+    document.getElementById("message").value = `@${replyTo} `;
+}
+</script>
+</body>
+</html>
