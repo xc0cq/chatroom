@@ -35,12 +35,12 @@
       flex: 1;
       padding: 20px;
       overflow-y: auto;
-      background: rgba(0,0,0,0.2);
+      background: rgba(0,0,0,0.15);
     }
     .message {
       margin: 5px 0;
       padding: 10px;
-      background: rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.06);
       border-radius: 6px;
       position: relative;
       display: flex;
@@ -51,6 +51,7 @@
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
+      gap: 8px;
     }
     .message .username {
       font-weight: bold;
@@ -88,7 +89,7 @@
       font-style: italic;
     }
     .message .text {
-      margin-top: 4px;
+      margin-top: 6px;
       white-space: pre-wrap;
       word-break: break-word;
       cursor: default;
@@ -100,13 +101,13 @@
       font-style: italic;
     }
     .reactions {
-      margin-top: 6px;
+      margin-top: 8px;
       display: flex;
       gap: 6px;
       flex-wrap: wrap;
     }
     .reaction {
-      background: #333333aa;
+      background: rgba(51,51,51,0.7);
       border-radius: 12px;
       padding: 2px 8px;
       font-size: 14px;
@@ -114,7 +115,7 @@
       user-select: none;
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
       color: white;
       position: relative;
     }
@@ -134,7 +135,7 @@
       left: 50%;
       transform: translateX(-50%);
       opacity: 0;
-      transition: opacity 0.3s;
+      transition: opacity 0.2s;
       white-space: nowrap;
       font-size: 0.8em;
     }
@@ -142,6 +143,7 @@
       visibility: visible;
       opacity: 1;
     }
+
     #input-area {
       display: flex;
       padding: 10px;
@@ -189,6 +191,8 @@
     #cancelEditBtn {
       background: #a83232 !important;
     }
+
+    /* Edit history modal */
     #historyModal {
       position: fixed;
       top: 50%;
@@ -229,11 +233,40 @@
       padding: 10px;
       border-radius: 8px;
     }
+
+    /* gradient username styles */
+    @keyframes rainbowShift {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+    @keyframes goldBlackShift {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+    .gradient-rainbow {
+      background: linear-gradient(270deg, red, orange, yellow, green, blue, indigo, violet, red);
+      background-size: 1400% 1400%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: bold;
+      animation: rainbowShift 6s ease infinite;
+    }
+    .gradient-goldblack {
+      background: linear-gradient(270deg, #FFD700, #000000, #FFD700);
+      background-size: 600% 600%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: bold;
+      animation: goldBlackShift 5s ease infinite;
+    }
   </style>
 </head>
 <body>
   <div id="onlineUsers">Online: <span id="onlineList">Loading...</span></div>
   <div id="messages"></div>
+
   <div id="input-area">
     <div id="replyingTo" style="display:none;"></div>
     <textarea id="messageInput" placeholder="Type a message..." rows="2"></textarea>
@@ -242,7 +275,6 @@
     <div id="typingIndicator"></div>
   </div>
 
-  <!-- Modal for edit history -->
   <div id="historyModal" role="dialog" aria-modal="true">
     <button class="close" title="Close">&times;</button>
     <h3>Edit History</h3>
@@ -254,6 +286,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
   <script>
+    // Firebase config (kept as you had it)
     const firebaseConfig = {
       apiKey: "AIzaSyC-9Hk4TBPi4WLb4anO-84FDpIfjH8X8HY",
       authDomain: "chatting-f1958.firebaseapp.com",
@@ -276,15 +309,16 @@
       window.location.href = "index.html";
     }
 
-    // Admin users - can delete any message
+    // Admin users (can delete any message)
     const adminUsers = ["admin"];
 
-    // Username gradients from before
+    // Gradient classes mapping (lowercase keys)
     const userGradientClasses = {
       "justin": "gradient-rainbow",
-      "mason": "gradient-goldblack",
+      "mason": "gradient-goldblack"
     };
 
+    // DOM refs
     const messagesDiv = document.getElementById("messages");
     const messageInput = document.getElementById("messageInput");
     const sendBtn = document.getElementById("sendBtn");
@@ -293,24 +327,23 @@
     const typingIndicator = document.getElementById("typingIndicator");
     const onlineListSpan = document.getElementById("onlineList");
 
-    // Modal for edit history
     const historyModal = document.getElementById("historyModal");
     const historyList = document.getElementById("historyList");
     const closeHistoryBtn = historyModal.querySelector("button.close");
 
+    // State
     let editingMessageId = null;
     let replyingToMessage = null;
-    let typingTimeout;
+    let typingTimeout = null;
 
-    // Update presence (online users)
-    function setPresence() {
-      const userPresenceRef = presenceRef.child(username);
-      userPresenceRef.set(true);
-      userPresenceRef.onDisconnect().remove();
-    }
-    setPresence();
+    // Presence: set online and remove on disconnect
+    (function setPresence(){
+      const myPresenceRef = presenceRef.child(username);
+      myPresenceRef.set(true);
+      myPresenceRef.onDisconnect().remove();
+    })();
 
-    // Listen for presence changes
+    // Listen for presence updates
     presenceRef.on("value", snapshot => {
       const users = snapshot.val() || {};
       const onlineUsers = Object.keys(users);
@@ -318,16 +351,17 @@
         onlineListSpan.textContent = "No one online";
       } else {
         onlineListSpan.innerHTML = onlineUsers.map(u => {
-          const gradientClass = userGradientClasses[u.toLowerCase()] || "";
-          return `<span class="${gradientClass}">${u}</span>`;
+          const cls = userGradientClasses[u.toLowerCase()] || "";
+          // escape username into text node by building span then using innerHTML for simplicity
+          return `<span class="${cls}">${u}</span>`;
         }).join(", ");
       }
     });
 
-    // Typing indicator
+    // Typing indicator handling
     messageInput.addEventListener("input", () => {
       typingRef.child(username).set(true);
-      clearTimeout(typingTimeout);
+      if (typingTimeout) clearTimeout(typingTimeout);
       typingTimeout = setTimeout(() => {
         typingRef.child(username).remove();
       }, 1500);
@@ -335,26 +369,27 @@
 
     typingRef.on("value", snapshot => {
       const typingUsers = snapshot.val() || {};
-      const othersTyping = Object.keys(typingUsers).filter(u => u !== username);
-      if (othersTyping.length === 0) {
+      const others = Object.keys(typingUsers).filter(u => u !== username);
+      if (others.length === 0) {
         typingIndicator.textContent = "";
-      } else if (othersTyping.length === 1) {
-        typingIndicator.textContent = `${othersTyping[0]} is typing...`;
+      } else if (others.length === 1) {
+        typingIndicator.textContent = `${others[0]} is typing...`;
       } else {
         typingIndicator.textContent = "Multiple users are typing...";
       }
     });
 
-    sendBtn.onclick = () => {
+    // Send / Edit actions
+    sendBtn.addEventListener("click", () => {
       const text = messageInput.value.trim();
       if (!text) return;
 
       if (editingMessageId) {
-        // Save edit with history
+        // Save edit and add to history
         messagesRef.child(editingMessageId).once("value").then(snap => {
-          const msg = snap.val();
-          const history = msg.history || [];
-          history.push({ text: msg.text, timestamp: msg.timestamp || Date.now() });
+          const old = snap.val() || {};
+          const history = old.history || [];
+          history.push({ text: old.text, timestamp: old.timestamp || Date.now() });
           messagesRef.child(editingMessageId).update({
             text: text,
             edited: true,
@@ -365,6 +400,7 @@
           clearInputState();
         });
       } else {
+        // New message
         messagesRef.push({
           user: username,
           text: text,
@@ -374,9 +410,9 @@
         });
         clearInputState();
       }
-    };
+    });
 
-    cancelEditBtn.onclick = clearInputState;
+    cancelEditBtn.addEventListener("click", clearInputState);
 
     function clearInputState() {
       editingMessageId = null;
@@ -388,6 +424,7 @@
       replyingToDiv.textContent = "";
     }
 
+    // Store message elements and data
     const messageElements = {};
 
     function getGradientClass(user) {
@@ -395,23 +432,29 @@
     }
 
     function formatTimestamp(ts) {
+      if (!ts) return "";
       const d = new Date(ts);
       return d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     }
 
+    // Render a single message (child_added)
     function renderMessage(snapshot) {
-      const msg = snapshot.val();
+      const raw = snapshot.val();
+      if (!raw) return;
+      const msg = Object.assign({}, raw);
       msg.id = snapshot.key;
 
+      // Build DOM
       const msgDiv = document.createElement("div");
-      msgDiv.classList.add("message");
+      msgDiv.className = "message";
       msgDiv.id = "msg-" + msg.id;
 
+      // Reply quote if present and available
       if (msg.replyTo && messageElements[msg.replyTo]) {
         const replyMsg = messageElements[msg.replyTo].msgData;
         const replyQuote = document.createElement("div");
         replyQuote.className = "reply-quote";
-        replyQuote.textContent = `↳ ${replyMsg.user}: ${replyMsg.text.length > 30 ? replyMsg.text.slice(0,30) + "..." : replyMsg.text}`;
+        replyQuote.textContent = `↳ ${replyMsg.user}: ${replyMsg.text.length > 40 ? replyMsg.text.slice(0,40) + "..." : replyMsg.text}`;
         msgDiv.appendChild(replyQuote);
       }
 
@@ -419,10 +462,11 @@
       topRow.className = "top-row";
 
       const userSpan = document.createElement("span");
+      userSpan.className = "username";
       userSpan.textContent = msg.user;
-      userSpan.classList.add("username");
-      const gradientClass = getGradientClass(msg.user);
-      if (gradientClass) userSpan.classList.add(gradientClass);
+      const g = getGradientClass(msg.user);
+      if (g) userSpan.classList.add(g);
+
       topRow.appendChild(userSpan);
 
       const timeSpan = document.createElement("span");
@@ -432,43 +476,41 @@
 
       msgDiv.appendChild(topRow);
 
-      const textSpan = document.createElement("div");
-      textSpan.className = "text";
-      textSpan.textContent = msg.text;
-      msgDiv.appendChild(textSpan);
+      const textDiv = document.createElement("div");
+      textDiv.className = "text";
+      textDiv.textContent = msg.text;
+      msgDiv.appendChild(textDiv);
 
       if (msg.edited) {
         const editedSpan = document.createElement("span");
         editedSpan.className = "edited";
         editedSpan.textContent = " (edited)";
-        textSpan.appendChild(editedSpan);
+        textDiv.appendChild(editedSpan);
       }
 
-      // Reactions container
+      // Reactions section
       const reactionsDiv = document.createElement("div");
       reactionsDiv.className = "reactions";
 
       const reactions = msg.reactions || {};
-      for (const [emoji, users] of Object.entries(reactions)) {
+      Object.entries(reactions).forEach(([emoji, usersObj]) => {
+        const users = usersObj || {};
         const count = Object.keys(users).length;
-        const reactedByUser = !!users[username];
+        const youReacted = !!users[username];
 
         const reactionBtn = document.createElement("div");
         reactionBtn.className = "reaction";
-        if (reactedByUser) reactionBtn.classList.add("self");
-
+        if (youReacted) reactionBtn.classList.add("self");
         reactionBtn.textContent = `${emoji} ${count}`;
 
-        // Tooltip with list of users who reacted
         const tooltip = document.createElement("span");
         tooltip.className = "tooltip";
         tooltip.textContent = Object.keys(users).join(", ");
         reactionBtn.appendChild(tooltip);
 
-        reactionBtn.title = reactedByUser ? "Remove reaction" : "Add reaction";
-        reactionBtn.onclick = () => toggleReaction(msg.id, emoji, reactedByUser);
+        reactionBtn.onclick = () => toggleReaction(msg.id, emoji, youReacted);
         reactionsDiv.appendChild(reactionBtn);
-      }
+      });
 
       // Add reaction button
       const addReactionBtn = document.createElement("div");
@@ -480,27 +522,28 @@
 
       msgDiv.appendChild(reactionsDiv);
 
-      // Actions (reply, edit, delete)
+      // Actions (reply, edit, delete, history)
       const actionsDiv = document.createElement("div");
       actionsDiv.className = "actions";
 
-      // Reply button for all
+      // Reply (everyone)
       const replyBtn = document.createElement("button");
       replyBtn.textContent = "Reply";
       replyBtn.title = "Reply to message";
       replyBtn.onclick = () => startReplyMessage(msg);
       actionsDiv.appendChild(replyBtn);
 
+      // Edit (only owner)
+      if (msg.user === username) {
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Edit";
+        editBtn.title = "Edit message";
+        editBtn.onclick = () => startEditMessage(msg.id);
+        actionsDiv.appendChild(editBtn);
+      }
+
+      // Delete (owner or admin)
       if (msg.user === username || adminUsers.includes(username.toLowerCase())) {
-        // Edit button (only for own messages)
-        if (msg.user === username) {
-          const editBtn = document.createElement("button");
-          editBtn.textContent = "Edit";
-          editBtn.title = "Edit message";
-          editBtn.onclick = () => startEditMessage(msg.id);
-          actionsDiv.appendChild(editBtn);
-        }
-        // Delete button
         const delBtn = document.createElement("button");
         delBtn.textContent = "Delete";
         delBtn.title = "Delete message";
@@ -508,8 +551,8 @@
         actionsDiv.appendChild(delBtn);
       }
 
-      // Show history button for edited messages
-      if (msg.edited && msg.history && msg.history.length > 0) {
+      // History (if edited)
+      if (msg.edited && Array.isArray(msg.history) && msg.history.length > 0) {
         const histBtn = document.createElement("button");
         histBtn.textContent = "History";
         histBtn.title = "Show edit history";
@@ -522,23 +565,216 @@
       messagesDiv.appendChild(msgDiv);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
-      messageElements[msg.id] = {element: msgDiv, msgData: msg};
+      // Save element and data
+      messageElements[msg.id] = { element: msgDiv, msgData: msg };
     }
 
+    // Update message on child_changed
     function updateMessage(snapshot) {
-      const msg = snapshot.val();
+      const raw = snapshot.val();
+      if (!raw) return;
+      const msg = Object.assign({}, raw);
       msg.id = snapshot.key;
+
       const stored = messageElements[msg.id];
-      if (!stored) return;
+      if (!stored) {
+        // If not rendered yet, render fresh
+        renderMessage(snapshot);
+        return;
+      }
 
       stored.msgData = msg;
       const msgDiv = stored.element;
 
-      // Reply quote
-      const replyQuote = msgDiv.querySelector(".reply-quote");
+      // Update reply quote
+      const existingQuote = msgDiv.querySelector(".reply-quote");
       if (msg.replyTo) {
-        if (!replyQuote && messageElements[msg.replyTo]) {
+        if (!existingQuote && messageElements[msg.replyTo]) {
           const replyMsg = messageElements[msg.replyTo].msgData;
           const newQuote = document.createElement("div");
           newQuote.className = "reply-quote";
-          newQuote.textContent = `↳ ${replyMsg.user}: ${reply
+          newQuote.textContent = `↳ ${replyMsg.user}: ${replyMsg.text.length > 40 ? replyMsg.text.slice(0,40) + "..." : replyMsg.text}`;
+          msgDiv.insertBefore(newQuote, msgDiv.firstChild);
+        } else if (existingQuote && messageElements[msg.replyTo]) {
+          const replyMsg = messageElements[msg.replyTo].msgData;
+          existingQuote.textContent = `↳ ${replyMsg.user}: ${replyMsg.text.length > 40 ? replyMsg.text.slice(0,40) + "..." : replyMsg.text}`;
+        }
+      } else {
+        if (existingQuote) existingQuote.remove();
+      }
+
+      // Update username/gradient
+      const userSpan = msgDiv.querySelector(".username");
+      if (userSpan) {
+        userSpan.textContent = msg.user;
+        userSpan.className = "username " + (getGradientClass(msg.user) || "");
+      }
+
+      // Update timestamp
+      const timeSpan = msgDiv.querySelector(".timestamp");
+      if (timeSpan) timeSpan.textContent = formatTimestamp(msg.timestamp);
+
+      // Update text and edited label
+      const textDiv = msgDiv.querySelector(".text");
+      if (textDiv) {
+        // clear then set content
+        textDiv.textContent = msg.text;
+        if (msg.edited) {
+          const editedSpan = document.createElement("span");
+          editedSpan.className = "edited";
+          editedSpan.textContent = " (edited)";
+          textDiv.appendChild(editedSpan);
+        }
+      }
+
+      // Update reactions: rebuild reactions div
+      const reactionsDiv = msgDiv.querySelector(".reactions");
+      if (reactionsDiv) {
+        reactionsDiv.innerHTML = "";
+        const reactions = msg.reactions || {};
+        Object.entries(reactions).forEach(([emoji, usersObj]) => {
+          const users = usersObj || {};
+          const count = Object.keys(users).length;
+          const youReacted = !!users[username];
+          const reactionBtn = document.createElement("div");
+          reactionBtn.className = "reaction";
+          if (youReacted) reactionBtn.classList.add("self");
+          reactionBtn.textContent = `${emoji} ${count}`;
+          const tooltip = document.createElement("span");
+          tooltip.className = "tooltip";
+          tooltip.textContent = Object.keys(users).join(", ");
+          reactionBtn.appendChild(tooltip);
+          reactionBtn.onclick = () => toggleReaction(msg.id, emoji, youReacted);
+          reactionsDiv.appendChild(reactionBtn);
+        });
+        // add reaction + button
+        const addReactionBtn = document.createElement("div");
+        addReactionBtn.className = "reaction";
+        addReactionBtn.textContent = "+";
+        addReactionBtn.title = "Add reaction";
+        addReactionBtn.onclick = () => promptAddReaction(msg.id);
+        reactionsDiv.appendChild(addReactionBtn);
+      }
+
+      // Update actions area (history may have changed)
+      const actionsDiv = msgDiv.querySelector(".actions");
+      if (actionsDiv) {
+        // rebuild minimal: keep reply/edit/delete but add/remove history button
+        actionsDiv.innerHTML = "";
+
+        const replyBtn = document.createElement("button");
+        replyBtn.textContent = "Reply";
+        replyBtn.title = "Reply to message";
+        replyBtn.onclick = () => startReplyMessage(msg);
+        actionsDiv.appendChild(replyBtn);
+
+        if (msg.user === username) {
+          const editBtn = document.createElement("button");
+          editBtn.textContent = "Edit";
+          editBtn.title = "Edit message";
+          editBtn.onclick = () => startEditMessage(msg.id);
+          actionsDiv.appendChild(editBtn);
+        }
+
+        if (msg.user === username || adminUsers.includes(username.toLowerCase())) {
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "Delete";
+          delBtn.title = "Delete message";
+          delBtn.onclick = () => deleteMessage(msg.id);
+          actionsDiv.appendChild(delBtn);
+        }
+
+        if (msg.edited && Array.isArray(msg.history) && msg.history.length > 0) {
+          const histBtn = document.createElement("button");
+          histBtn.textContent = "History";
+          histBtn.title = "Show edit history";
+          histBtn.onclick = () => showHistory(msg.history);
+          actionsDiv.appendChild(histBtn);
+        }
+      }
+    }
+
+    function removeMessage(snapshot) {
+      const id = snapshot.key;
+      const stored = messageElements[id];
+      if (!stored) return;
+      stored.element.remove();
+      delete messageElements[id];
+      if (editingMessageId === id) clearInputState();
+      if (replyingToMessage && replyingToMessage.id === id) clearInputState();
+    }
+
+    function startEditMessage(id) {
+      const stored = messageElements[id];
+      if (!stored) return;
+      const msg = stored.msgData;
+      editingMessageId = id;
+      replyingToMessage = null;
+      messageInput.value = msg.text || "";
+      messageInput.focus();
+      sendBtn.textContent = "Save";
+      cancelEditBtn.style.display = "inline-block";
+      replyingToDiv.style.display = "none";
+      replyingToDiv.textContent = "";
+    }
+
+    function deleteMessage(id) {
+      if (confirm("Delete this message?")) {
+        messagesRef.child(id).remove();
+      }
+    }
+
+    function startReplyMessage(msg) {
+      replyingToMessage = msg;
+      editingMessageId = null;
+      replyingToDiv.style.display = "block";
+      replyingToDiv.textContent = `Replying to ${msg.user}: "${msg.text.length > 80 ? msg.text.slice(0,80) + '...' : msg.text}"`;
+      messageInput.focus();
+      sendBtn.textContent = "Send";
+      cancelEditBtn.style.display = "none";
+    }
+
+    function toggleReaction(messageId, emoji, reacted) {
+      const path = messagesRef.child(messageId).child("reactions").child(emoji).child(username);
+      if (reacted) {
+        path.remove();
+      } else {
+        path.set(true);
+      }
+    }
+
+    function promptAddReaction(messageId) {
+      const emoji = prompt("Enter an emoji to react with (e.g. 😊, 👍, ❤️):");
+      if (!emoji) return;
+      messagesRef.child(messageId).child("reactions").child(emoji).child(username).set(true);
+    }
+
+    function showHistory(historyArray) {
+      historyList.innerHTML = "";
+      if (!Array.isArray(historyArray) || historyArray.length === 0) {
+        historyList.textContent = "No history available.";
+      } else {
+        historyArray.slice().reverse().forEach(h => {
+          const time = h.timestamp ? new Date(h.timestamp).toLocaleString() : "Unknown time";
+          const p = document.createElement("div");
+          p.textContent = `${time}: ${h.text}`;
+          p.style.padding = "6px 0";
+          historyList.appendChild(p);
+        });
+      }
+      historyModal.style.display = "block";
+    }
+
+    // Close history modal
+    closeHistoryBtn.addEventListener("click", () => {
+      historyModal.style.display = "none";
+    });
+
+    // Firebase listeners
+    messagesRef.on("child_added", renderMessage);
+    messagesRef.on("child_changed", updateMessage);
+    messagesRef.on("child_removed", removeMessage);
+
+  </script>
+</body>
+</html>
