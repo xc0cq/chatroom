@@ -205,12 +205,10 @@
     </div>
     <button id="jumpToPresentBtn" title="Jump to present">Jump to Present</button>
 
-    <!-- Firebase Compat SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
-        // Firebase config
         const firebaseConfig = {
             apiKey: "AIzaSyC-9Hk4TBPi4WLb4anO-84FDpIfjH8X8HY",
             authDomain: "chatting-f1958.firebaseapp.com",
@@ -225,13 +223,10 @@
         const db = firebase.database();
 
         const username = localStorage.getItem("chatUser");
-        if (!username) {
-            window.location.href = "index.html";
-        }
+        if (!username) window.location.href = "index.html";
 
         const messagesRef = db.ref("messages");
 
-        // Banned words list (safechat)
         const bannedWords = [
             "fuck", "fvck", "fukk", "shit", "shyt", "bitch", "b1tch", "b!tch", "asshole", "a55hole", "a$$hole",
             "dick", "d1ck", "d!ck", "pussy", "pu55y", "p*ssy", "cock", "c0ck",
@@ -421,7 +416,6 @@
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        // Manage Jump to Present button visibility
         function checkScroll() {
             const nearBottom = messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight < 50;
             if (nearBottom) {
@@ -489,7 +483,6 @@
             }
         });
 
-        // Initial scroll to bottom on load
         window.onload = () => {
             setTimeout(scrollToBottom, 100);
             updateReplyIndicator();
