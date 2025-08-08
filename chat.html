@@ -93,6 +93,9 @@
         font-size: 16px;
         background: #2a2a2a;
         color: white;
+        resize: none;
+        min-height: 40px;
+        max-height: 100px;
     }
     #sendBtn {
         margin-left: 10px;
@@ -104,6 +107,7 @@
         cursor: pointer;
         font-weight: bold;
         font-size: 16px;
+        user-select: none;
     }
     .msg-actions {
         position: absolute;
@@ -121,6 +125,7 @@
         margin-left: 8px;
         cursor: pointer;
         color: #aaa;
+        user-select: none;
     }
     .msg-action-btn:hover {
         color: #ff4d4d;
@@ -166,6 +171,7 @@
         cursor: pointer;
         padding: 3px 10px;
         font-size: 14px;
+        user-select: none;
     }
     #jumpToPresentBtn {
         position: fixed;
@@ -225,7 +231,7 @@
 
         const messagesRef = db.ref("messages");
 
-        // Banned words list
+        // Banned words list (safechat)
         const bannedWords = [
             "fuck", "fvck", "fukk", "shit", "shyt", "bitch", "b1tch", "b!tch", "asshole", "a55hole", "a$$hole",
             "dick", "d1ck", "d!ck", "pussy", "pu55y", "p*ssy", "cock", "c0ck",
@@ -438,7 +444,6 @@
             const msgEl = createMessageElement(id, msg);
             messagesDiv.appendChild(msgEl);
             if (editingMessageId !== id) {
-                // auto-scroll only if near bottom
                 const nearBottom = messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight < 100;
                 if (nearBottom) {
                     scrollToBottom();
@@ -471,7 +476,6 @@
                 sendMessage();
             } else if (e.key === "Escape" && editingMessageId) {
                 editingMessageId = null;
-                // rerender all messages to exit edit mode
                 messagesDiv.querySelectorAll(".message").forEach(msgEl => {
                     const id = msgEl.dataset.id;
                     messagesRef.child(id).once("value").then(snapshot => {
