@@ -1,492 +1,544 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>0PM</title>
-<style>
-    @keyframes rainbow {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-    @keyframes gold-gradient {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
+  <meta charset="UTF-8" />
+  <title>Chat Room</title>
+  <style>
     body {
-        background: linear-gradient(135deg, #000000, #330033);
-        font-family: Arial, sans-serif;
-        color: white;
-        margin: 0;
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
+      background: linear-gradient(135deg, #000000, #8304e0);
+      font-family: Arial, sans-serif;
+      color: white;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
     }
-    header {
-        background: #1a1a1a;
-        padding: 15px;
-        text-align: center;
-        font-size: 24px;
-        font-weight: bold;
-        user-select: none;
-        border-bottom: 1px solid #444;
-        flex-shrink: 0;
+    #onlineUsers {
+      background: #1a1a1a;
+      padding: 6px 12px;
+      font-size: 0.9em;
+      border-bottom: 1px solid #444;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    #onlineUsers span {
+      background: #8304e0aa;
+      border-radius: 12px;
+      padding: 2px 10px;
+      user-select: none;
+      font-weight: bold;
     }
     #messages {
-        flex: 1;
-        padding: 20px;
-        overflow-y: auto;
-        background: #111111;
-        box-sizing: border-box;
-        word-wrap: break-word;
-        position: relative;
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.2);
     }
     .message {
-        margin: 5px 0;
-        padding: 10px;
-        background: rgba(255,255,255,0.05);
-        border-radius: 6px;
-        white-space: pre-wrap;
-        position: relative;
+      margin: 5px 0;
+      padding: 10px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 6px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .message .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
     }
     .message .username {
-        font-weight: bold;
-        cursor: default;
+      font-weight: bold;
+      cursor: default;
     }
-    .username-justin {
-        background: linear-gradient(270deg, red, orange, yellow, green, blue, indigo, violet);
-        background-size: 1400% 1400%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: rainbow 10s ease infinite;
-        display: inline-block;
+    .message .timestamp {
+      font-size: 0.75em;
+      color: #bbb;
+      margin-left: 8px;
+      white-space: nowrap;
     }
-    .username-mason {
-        background: linear-gradient(270deg, black, gold, black);
-        background-size: 1400% 1400%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: gold-gradient 6s ease infinite;
-        display: inline-block;
+    .message .actions {
+      display: flex;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      flex-wrap: wrap;
     }
-    .username-guest {
-        color: #ccc;
-        font-weight: bold;
+    .message:hover .actions {
+      opacity: 1;
+    }
+    .message .actions button {
+      background: transparent;
+      border: none;
+      color: #ccc;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .message .reply-quote {
+      font-size: 0.9em;
+      color: #aaa;
+      border-left: 3px solid #8304e0;
+      padding-left: 8px;
+      margin-bottom: 5px;
+      font-style: italic;
+    }
+    .message .text {
+      margin-top: 4px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      cursor: default;
+    }
+    .message .edited {
+      font-size: 0.75em;
+      color: #888;
+      margin-left: 6px;
+      font-style: italic;
+    }
+    .reactions {
+      margin-top: 6px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .reaction {
+      background: #333333aa;
+      border-radius: 12px;
+      padding: 2px 8px;
+      font-size: 14px;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: white;
+      position: relative;
+    }
+    .reaction.self {
+      background: #6b47ff;
+    }
+    .reaction .tooltip {
+      visibility: hidden;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 4px 8px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      white-space: nowrap;
+      font-size: 0.8em;
+    }
+    .reaction:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
     }
     #input-area {
-        display: flex;
-        padding: 10px;
-        background: #1a1a1a;
-        border-top: 1px solid #444;
-        box-sizing: border-box;
-        flex-shrink: 0;
+      display: flex;
+      padding: 10px;
+      background: #1a1a1a;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    #replyingTo {
+      flex-basis: 100%;
+      margin-bottom: 6px;
+      font-style: italic;
+      color: #8304e0;
+      user-select: none;
+    }
+    #typingIndicator {
+      flex-basis: 100%;
+      font-style: italic;
+      color: #ccc;
+      height: 20px;
+      margin-left: 10px;
+      min-height: 20px;
+      user-select: none;
     }
     #messageInput {
-        flex: 1;
-        padding: 10px;
-        border: none;
-        border-radius: 6px;
-        outline: none;
-        font-size: 16px;
-        background: #2a2a2a;
-        color: white;
-        resize: none;
-        min-height: 40px;
-        max-height: 100px;
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      outline: none;
+      background: #2a2a2a;
+      color: white;
+      resize: none;
+      min-height: 40px;
     }
-    #sendBtn {
-        margin-left: 10px;
-        background: linear-gradient(90deg, #8304e0, #b367ff);
-        border: none;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: bold;
-        font-size: 16px;
-        user-select: none;
+    #input-area button {
+      margin-left: 10px;
+      background: linear-gradient(90deg, #5302b8, #8304e0);
+      border: none;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
     }
-    .msg-actions {
-        position: absolute;
-        top: 5px;
-        right: 10px;
-        font-size: 14px;
-        color: #bbb;
-        user-select: none;
-        display: none;
+    #cancelEditBtn {
+      background: #a83232 !important;
     }
-    .message:hover .msg-actions {
-        display: block;
+    #historyModal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 0 20px #8304e0cc;
+      max-width: 90vw;
+      max-height: 70vh;
+      overflow-y: auto;
+      display: none;
+      z-index: 9999;
+      color: white;
     }
-    .msg-action-btn {
-        margin-left: 8px;
-        cursor: pointer;
-        color: #aaa;
-        user-select: none;
+    #historyModal h3 {
+      margin-top: 0;
+      color: #8304e0;
     }
-    .msg-action-btn:hover {
-        color: #ff4d4d;
+    #historyModal button.close {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
     }
-    .reply-container {
-        margin-top: 8px;
-        border-left: 3px solid #555;
-        padding-left: 8px;
-        font-style: italic;
-        color: #999;
+    #historyList {
+      margin-top: 10px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 50vh;
+      overflow-y: auto;
+      background: #111;
+      padding: 10px;
+      border-radius: 8px;
     }
-    .edit-input {
-        width: 100%;
-        padding: 8px;
-        font-size: 16px;
-        border-radius: 6px;
-        border: none;
-        outline: none;
-        background: #333;
-        color: white;
-        box-sizing: border-box;
-        margin-top: 5px;
-        resize: vertical;
-        min-height: 50px;
-        max-height: 150px;
-    }
-    #replyIndicator {
-        background: #222;
-        color: #ccc;
-        padding: 5px 10px;
-        border-top: 1px solid #444;
-        font-size: 14px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-shrink: 0;
-    }
-    #replyIndicator button {
-        background: #8304e0;
-        border: none;
-        color: white;
-        border-radius: 6px;
-        cursor: pointer;
-        padding: 3px 10px;
-        font-size: 14px;
-        user-select: none;
-    }
-    #jumpToPresentBtn {
-        position: fixed;
-        bottom: 70px;
-        right: 20px;
-        background: #8304e0;
-        color: white;
-        border: none;
-        padding: 10px 16px;
-        border-radius: 20px;
-        font-weight: bold;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(131,4,224,0.7);
-        display: none;
-        user-select: none;
-        z-index: 1000;
-        transition: opacity 0.3s ease;
-    }
-    #jumpToPresentBtn:hover {
-        background: #b367ff;
-    }
-</style>
+  </style>
 </head>
 <body>
-    <header>0PM</header>
-    <div id="messages"></div>
-    <div id="replyIndicator" style="display:none"></div>
-    <div id="input-area">
-        <textarea id="messageInput" placeholder="Type a message..." autocomplete="off" rows="2"></textarea>
-        <button id="sendBtn">Send</button>
-    </div>
-    <button id="jumpToPresentBtn" title="Jump to present">Jump to Present</button>
+  <div id="onlineUsers">Online: <span id="onlineList">Loading...</span></div>
+  <div id="messages"></div>
+  <div id="input-area">
+    <div id="replyingTo" style="display:none;"></div>
+    <textarea id="messageInput" placeholder="Type a message..." rows="2"></textarea>
+    <button id="sendBtn">Send</button>
+    <button id="cancelEditBtn" style="display:none; margin-left:10px;">Cancel Edit</button>
+    <div id="typingIndicator"></div>
+  </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <!-- Modal for edit history -->
+  <div id="historyModal" role="dialog" aria-modal="true">
+    <button class="close" title="Close">&times;</button>
+    <h3>Edit History</h3>
+    <div id="historyList"></div>
+  </div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyC-9Hk4TBPi4WLb4anO-84FDpIfjH8X8HY",
-            authDomain: "chatting-f1958.firebaseapp.com",
-            databaseURL: "https://chatting-f1958-default-rtdb.firebaseio.com",
-            projectId: "chatting-f1958",
-            storageBucket: "chatting-f1958.appspot.com",
-            messagingSenderId: "308400029505",
-            appId: "1:308400029505:web:a265599a58f1881e83abc0"
-        };
+  <!-- Firebase Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC-9Hk4TBPi4WLb4anO-84FDpIfjH8X8HY",
+      authDomain: "chatting-f1958.firebaseapp.com",
+      databaseURL: "https://chatting-f1958-default-rtdb.firebaseio.com",
+      projectId: "chatting-f1958",
+      storageBucket: "chatting-f1958.appspot.com",
+      messagingSenderId: "308400029505",
+      appId: "1:308400029505:web:a265599a58f1881e83abc0"
+    };
 
-        const username = localStorage.getItem("chatUser");
-        if (!username) window.location.href = "index.html";
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-        const messagesRef = db.ref("messages");
+    const messagesRef = db.ref("messages");
+    const typingRef = db.ref("typing");
+    const presenceRef = db.ref("presence");
 
-        const bannedWords = [
-            "fuck", "fvck", "fukk", "shit", "shyt", "bitch", "b1tch", "b!tch", "asshole", "a55hole", "a$$hole",
-            "dick", "d1ck", "d!ck", "pussy", "pu55y", "p*ssy", "cock", "c0ck",
-            "nigger", "n1gger", "n!gger", "nigga", "n1gga", "n!gga",
-            "cunt", "c*nt",
-            "fag", "f4g", "f@g",
-            "motherfucker", "m0therfucker",
-            "twat",
-            "arse", "a55",
-            "slut",
-            "whore",
-        ];
+    const username = localStorage.getItem("chatUser");
+    if (!username) {
+      window.location.href = "index.html";
+    }
 
-        function censorMessage(text) {
-            let censored = text;
-            bannedWords.forEach(word => {
-                const pattern = new RegExp(word, 'gi');
-                censored = censored.replace(pattern, match => '#'.repeat(match.length));
-            });
-            return censored;
-        }
+    // Admin users - can delete any message
+    const adminUsers = ["admin"];
 
-        function formatUsername(name) {
-            const lower = name.toLowerCase();
-            if (lower === "justin") return `<span class="username username-justin">${name}</span>`;
-            if (lower === "mason") return `<span class="username username-mason">${name}</span>`;
-            if (lower === "guest") return `<span class="username username-guest">${name}</span>`;
-            return `<span class="username">${name}</span>`;
-        }
+    // Username gradients from before
+    const userGradientClasses = {
+      "justin": "gradient-rainbow",
+      "mason": "gradient-goldblack",
+    };
 
-        let editingMessageId = null;
-        let replyingToMessageId = null;
+    const messagesDiv = document.getElementById("messages");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+    const replyingToDiv = document.getElementById("replyingTo");
+    const typingIndicator = document.getElementById("typingIndicator");
+    const onlineListSpan = document.getElementById("onlineList");
 
-        function createMessageElement(id, msgData) {
-            const msgDiv = document.createElement("div");
-            msgDiv.classList.add("message");
-            msgDiv.dataset.id = id;
+    // Modal for edit history
+    const historyModal = document.getElementById("historyModal");
+    const historyList = document.getElementById("historyList");
+    const closeHistoryBtn = historyModal.querySelector("button.close");
 
-            function renderContent() {
-                msgDiv.innerHTML = "";
+    let editingMessageId = null;
+    let replyingToMessage = null;
+    let typingTimeout;
 
-                const userSpan = document.createElement("span");
-                userSpan.innerHTML = formatUsername(msgData.user) + ": ";
-                msgDiv.appendChild(userSpan);
+    // Update presence (online users)
+    function setPresence() {
+      const userPresenceRef = presenceRef.child(username);
+      userPresenceRef.set(true);
+      userPresenceRef.onDisconnect().remove();
+    }
+    setPresence();
 
-                if (editingMessageId === id) {
-                    const editInput = document.createElement("textarea");
-                    editInput.className = "edit-input";
-                    editInput.value = msgData.text;
-                    msgDiv.appendChild(editInput);
-                    editInput.focus();
+    // Listen for presence changes
+    presenceRef.on("value", snapshot => {
+      const users = snapshot.val() || {};
+      const onlineUsers = Object.keys(users);
+      if (onlineUsers.length === 0) {
+        onlineListSpan.textContent = "No one online";
+      } else {
+        onlineListSpan.innerHTML = onlineUsers.map(u => {
+          const gradientClass = userGradientClasses[u.toLowerCase()] || "";
+          return `<span class="${gradientClass}">${u}</span>`;
+        }).join(", ");
+      }
+    });
 
-                    editInput.addEventListener("keydown", e => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            const newText = censorMessage(editInput.value.trim());
-                            if (newText.length === 0) return;
-                            messagesRef.child(id).update({ text: newText });
-                            editingMessageId = null;
-                        } else if (e.key === "Escape") {
-                            editingMessageId = null;
-                            renderContent();
-                        }
-                    });
-                } else {
-                    const textSpan = document.createElement("span");
-                    textSpan.textContent = msgData.text;
-                    msgDiv.appendChild(textSpan);
+    // Typing indicator
+    messageInput.addEventListener("input", () => {
+      typingRef.child(username).set(true);
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        typingRef.child(username).remove();
+      }, 1500);
+    });
 
-                    if (msgData.replyTo) {
-                        const replyDiv = document.createElement("div");
-                        replyDiv.className = "reply-container";
-                        replyDiv.textContent = `↳ Reply to: ${msgData.replyTo.user}: ${msgData.replyTo.text}`;
-                        msgDiv.appendChild(replyDiv);
-                    }
+    typingRef.on("value", snapshot => {
+      const typingUsers = snapshot.val() || {};
+      const othersTyping = Object.keys(typingUsers).filter(u => u !== username);
+      if (othersTyping.length === 0) {
+        typingIndicator.textContent = "";
+      } else if (othersTyping.length === 1) {
+        typingIndicator.textContent = `${othersTyping[0]} is typing...`;
+      } else {
+        typingIndicator.textContent = "Multiple users are typing...";
+      }
+    });
 
-                    if (msgData.user === username) {
-                        const actionsDiv = document.createElement("div");
-                        actionsDiv.className = "msg-actions";
+    sendBtn.onclick = () => {
+      const text = messageInput.value.trim();
+      if (!text) return;
 
-                        const editBtn = document.createElement("span");
-                        editBtn.className = "msg-action-btn";
-                        editBtn.textContent = "Edit";
-                        editBtn.title = "Edit message";
-                        editBtn.onclick = () => {
-                            if (editingMessageId !== id) {
-                                editingMessageId = id;
-                                renderContent();
-                            }
-                        };
-                        actionsDiv.appendChild(editBtn);
-
-                        const deleteBtn = document.createElement("span");
-                        deleteBtn.className = "msg-action-btn";
-                        deleteBtn.textContent = "Delete";
-                        deleteBtn.title = "Delete message";
-                        deleteBtn.onclick = () => {
-                            if (confirm("Delete this message?")) {
-                                messagesRef.child(id).remove();
-                            }
-                        };
-                        actionsDiv.appendChild(deleteBtn);
-
-                        const replyBtn = document.createElement("span");
-                        replyBtn.className = "msg-action-btn";
-                        replyBtn.textContent = "Reply";
-                        replyBtn.title = "Reply to message";
-                        replyBtn.onclick = () => {
-                            replyingToMessageId = id;
-                            document.getElementById("messageInput").focus();
-                            updateReplyIndicator();
-                        };
-                        actionsDiv.appendChild(replyBtn);
-
-                        msgDiv.appendChild(actionsDiv);
-                    }
-                }
-            }
-            renderContent();
-            return msgDiv;
-        }
-
-        function updateReplyIndicator() {
-            const replyArea = document.getElementById("replyIndicator");
-            if (replyingToMessageId) {
-                messagesRef.child(replyingToMessageId).once("value").then(snapshot => {
-                    const msg = snapshot.val();
-                    if (!msg) {
-                        replyingToMessageId = null;
-                        updateReplyIndicator();
-                        return;
-                    }
-                    replyArea.style.display = "flex";
-                    replyArea.textContent = `Replying to ${msg.user}: ${msg.text.length > 50 ? msg.text.slice(0,50) + "..." : msg.text}`;
-                    const cancelBtn = document.createElement("button");
-                    cancelBtn.textContent = "Cancel";
-                    cancelBtn.onclick = () => {
-                        replyingToMessageId = null;
-                        updateReplyIndicator();
-                    };
-                    replyArea.appendChild(cancelBtn);
-                });
-            } else {
-                replyArea.style.display = "none";
-                replyArea.textContent = "";
-            }
-        }
-
-        function sendMessage() {
-            const input = document.getElementById("messageInput");
-            let text = input.value.trim();
-            if (!text) return;
-
-            text = censorMessage(text);
-
-            const messageData = {
-                user: username,
-                text: text
-            };
-
-            if (replyingToMessageId) {
-                messagesRef.child(replyingToMessageId).once("value").then(snapshot => {
-                    const replyMsg = snapshot.val();
-                    if (replyMsg) {
-                        messageData.replyTo = {
-                            user: replyMsg.user,
-                            text: replyMsg.text
-                        };
-                    }
-                    messagesRef.push(messageData);
-                    input.value = "";
-                    replyingToMessageId = null;
-                    updateReplyIndicator();
-                    scrollToBottom();
-                });
-            } else {
-                messagesRef.push(messageData);
-                input.value = "";
-                scrollToBottom();
-            }
-        }
-
-        const messagesDiv = document.getElementById("messages");
-        const jumpBtn = document.getElementById("jumpToPresentBtn");
-
-        function scrollToBottom() {
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-
-        function checkScroll() {
-            const nearBottom = messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight < 50;
-            if (nearBottom) {
-                jumpBtn.style.display = "none";
-            } else {
-                jumpBtn.style.display = "block";
-            }
-        }
-
-        messagesDiv.addEventListener("scroll", checkScroll);
-        jumpBtn.addEventListener("click", () => {
-            scrollToBottom();
-            jumpBtn.style.display = "none";
-            document.getElementById("messageInput").focus();
+      if (editingMessageId) {
+        // Save edit with history
+        messagesRef.child(editingMessageId).once("value").then(snap => {
+          const msg = snap.val();
+          const history = msg.history || [];
+          history.push({ text: msg.text, timestamp: msg.timestamp || Date.now() });
+          messagesRef.child(editingMessageId).update({
+            text: text,
+            edited: true,
+            history: history,
+            timestamp: Date.now(),
+            replyTo: replyingToMessage ? replyingToMessage.id : null
+          });
+          clearInputState();
         });
-
-        messagesRef.on("child_added", snapshot => {
-            const id = snapshot.key;
-            const msg = snapshot.val();
-            const msgEl = createMessageElement(id, msg);
-            messagesDiv.appendChild(msgEl);
-            if (editingMessageId !== id) {
-                const nearBottom = messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight < 100;
-                if (nearBottom) {
-                    scrollToBottom();
-                }
-            }
+      } else {
+        messagesRef.push({
+          user: username,
+          text: text,
+          timestamp: Date.now(),
+          replyTo: replyingToMessage ? replyingToMessage.id : null,
+          reactions: {}
         });
+        clearInputState();
+      }
+    };
 
-        messagesRef.on("child_changed", snapshot => {
-            const id = snapshot.key;
-            const msg = snapshot.val();
-            const msgEl = messagesDiv.querySelector(`[data-id="${id}"]`);
-            if (msgEl) {
-                const newEl = createMessageElement(id, msg);
-                messagesDiv.replaceChild(newEl, msgEl);
-            }
-        });
+    cancelEditBtn.onclick = clearInputState;
 
-        messagesRef.on("child_removed", snapshot => {
-            const id = snapshot.key;
-            const msgEl = messagesDiv.querySelector(`[data-id="${id}"]`);
-            if (msgEl) {
-                messagesDiv.removeChild(msgEl);
-            }
-        });
+    function clearInputState() {
+      editingMessageId = null;
+      replyingToMessage = null;
+      messageInput.value = "";
+      sendBtn.textContent = "Send";
+      cancelEditBtn.style.display = "none";
+      replyingToDiv.style.display = "none";
+      replyingToDiv.textContent = "";
+    }
 
-        document.getElementById("sendBtn").addEventListener("click", sendMessage);
-        document.getElementById("messageInput").addEventListener("keydown", e => {
-            if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            } else if (e.key === "Escape" && editingMessageId) {
-                editingMessageId = null;
-                messagesDiv.querySelectorAll(".message").forEach(msgEl => {
-                    const id = msgEl.dataset.id;
-                    messagesRef.child(id).once("value").then(snapshot => {
-                        const msg = snapshot.val();
-                        if (msg) {
-                            const newEl = createMessageElement(id, msg);
-                            messagesDiv.replaceChild(newEl, msgEl);
-                        }
-                    });
-                });
-            }
-        });
+    const messageElements = {};
 
-        window.onload = () => {
-            setTimeout(scrollToBottom, 100);
-            updateReplyIndicator();
-        };
-    </script>
-</body>
-</html>
+    function getGradientClass(user) {
+      return userGradientClasses[user.toLowerCase()] || "";
+    }
+
+    function formatTimestamp(ts) {
+      const d = new Date(ts);
+      return d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+
+    function renderMessage(snapshot) {
+      const msg = snapshot.val();
+      msg.id = snapshot.key;
+
+      const msgDiv = document.createElement("div");
+      msgDiv.classList.add("message");
+      msgDiv.id = "msg-" + msg.id;
+
+      if (msg.replyTo && messageElements[msg.replyTo]) {
+        const replyMsg = messageElements[msg.replyTo].msgData;
+        const replyQuote = document.createElement("div");
+        replyQuote.className = "reply-quote";
+        replyQuote.textContent = `↳ ${replyMsg.user}: ${replyMsg.text.length > 30 ? replyMsg.text.slice(0,30) + "..." : replyMsg.text}`;
+        msgDiv.appendChild(replyQuote);
+      }
+
+      const topRow = document.createElement("div");
+      topRow.className = "top-row";
+
+      const userSpan = document.createElement("span");
+      userSpan.textContent = msg.user;
+      userSpan.classList.add("username");
+      const gradientClass = getGradientClass(msg.user);
+      if (gradientClass) userSpan.classList.add(gradientClass);
+      topRow.appendChild(userSpan);
+
+      const timeSpan = document.createElement("span");
+      timeSpan.className = "timestamp";
+      timeSpan.textContent = formatTimestamp(msg.timestamp);
+      topRow.appendChild(timeSpan);
+
+      msgDiv.appendChild(topRow);
+
+      const textSpan = document.createElement("div");
+      textSpan.className = "text";
+      textSpan.textContent = msg.text;
+      msgDiv.appendChild(textSpan);
+
+      if (msg.edited) {
+        const editedSpan = document.createElement("span");
+        editedSpan.className = "edited";
+        editedSpan.textContent = " (edited)";
+        textSpan.appendChild(editedSpan);
+      }
+
+      // Reactions container
+      const reactionsDiv = document.createElement("div");
+      reactionsDiv.className = "reactions";
+
+      const reactions = msg.reactions || {};
+      for (const [emoji, users] of Object.entries(reactions)) {
+        const count = Object.keys(users).length;
+        const reactedByUser = !!users[username];
+
+        const reactionBtn = document.createElement("div");
+        reactionBtn.className = "reaction";
+        if (reactedByUser) reactionBtn.classList.add("self");
+
+        reactionBtn.textContent = `${emoji} ${count}`;
+
+        // Tooltip with list of users who reacted
+        const tooltip = document.createElement("span");
+        tooltip.className = "tooltip";
+        tooltip.textContent = Object.keys(users).join(", ");
+        reactionBtn.appendChild(tooltip);
+
+        reactionBtn.title = reactedByUser ? "Remove reaction" : "Add reaction";
+        reactionBtn.onclick = () => toggleReaction(msg.id, emoji, reactedByUser);
+        reactionsDiv.appendChild(reactionBtn);
+      }
+
+      // Add reaction button
+      const addReactionBtn = document.createElement("div");
+      addReactionBtn.className = "reaction";
+      addReactionBtn.textContent = "+";
+      addReactionBtn.title = "Add reaction";
+      addReactionBtn.onclick = () => promptAddReaction(msg.id);
+      reactionsDiv.appendChild(addReactionBtn);
+
+      msgDiv.appendChild(reactionsDiv);
+
+      // Actions (reply, edit, delete)
+      const actionsDiv = document.createElement("div");
+      actionsDiv.className = "actions";
+
+      // Reply button for all
+      const replyBtn = document.createElement("button");
+      replyBtn.textContent = "Reply";
+      replyBtn.title = "Reply to message";
+      replyBtn.onclick = () => startReplyMessage(msg);
+      actionsDiv.appendChild(replyBtn);
+
+      if (msg.user === username || adminUsers.includes(username.toLowerCase())) {
+        // Edit button (only for own messages)
+        if (msg.user === username) {
+          const editBtn = document.createElement("button");
+          editBtn.textContent = "Edit";
+          editBtn.title = "Edit message";
+          editBtn.onclick = () => startEditMessage(msg.id);
+          actionsDiv.appendChild(editBtn);
+        }
+        // Delete button
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "Delete";
+        delBtn.title = "Delete message";
+        delBtn.onclick = () => deleteMessage(msg.id);
+        actionsDiv.appendChild(delBtn);
+      }
+
+      // Show history button for edited messages
+      if (msg.edited && msg.history && msg.history.length > 0) {
+        const histBtn = document.createElement("button");
+        histBtn.textContent = "History";
+        histBtn.title = "Show edit history";
+        histBtn.onclick = () => showHistory(msg.history);
+        actionsDiv.appendChild(histBtn);
+      }
+
+      msgDiv.appendChild(actionsDiv);
+
+      messagesDiv.appendChild(msgDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+      messageElements[msg.id] = {element: msgDiv, msgData: msg};
+    }
+
+    function updateMessage(snapshot) {
+      const msg = snapshot.val();
+      msg.id = snapshot.key;
+      const stored = messageElements[msg.id];
+      if (!stored) return;
+
+      stored.msgData = msg;
+      const msgDiv = stored.element;
+
+      // Reply quote
+      const replyQuote = msgDiv.querySelector(".reply-quote");
+      if (msg.replyTo) {
+        if (!replyQuote && messageElements[msg.replyTo]) {
+          const replyMsg = messageElements[msg.replyTo].msgData;
+          const newQuote = document.createElement("div");
+          newQuote.className = "reply-quote";
+          newQuote.textContent = `↳ ${replyMsg.user}: ${reply
