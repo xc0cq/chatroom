@@ -1,159 +1,210 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>0PM</title>
-    <style>
-        @keyframes rainbow {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        @keyframes gold-gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        body {
-            background: linear-gradient(135deg, #000000, #330033);
-            font-family: Arial, sans-serif;
-            color: white;
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        header {
-            background: #1a1a1a;
-            padding: 15px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            user-select: none;
-            border-bottom: 1px solid #444;
-        }
-        #messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            background: #111111;
-            box-sizing: border-box;
-            word-wrap: break-word;
-        }
-        .message {
-            margin: 5px 0;
-            padding: 10px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 6px;
-            white-space: pre-wrap;
-            position: relative;
-        }
-        .message .username {
-            font-weight: bold;
-            cursor: default;
-        }
-        .username-justin {
-            background: linear-gradient(270deg, red, orange, yellow, green, blue, indigo, violet);
-            background-size: 1400% 1400%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: rainbow 10s ease infinite;
-            display: inline-block;
-        }
-        .username-mason {
-            background: linear-gradient(270deg, black, gold, black);
-            background-size: 1400% 1400%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: gold-gradient 6s ease infinite;
-            display: inline-block;
-        }
-        .username-guest {
-            color: #ccc;
-            font-weight: bold;
-        }
-        #input-area {
-            display: flex;
-            padding: 10px;
-            background: #1a1a1a;
-            border-top: 1px solid #444;
-            box-sizing: border-box;
-        }
-        #messageInput {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 6px;
-            outline: none;
-            font-size: 16px;
-            background: #2a2a2a;
-            color: white;
-        }
-        #sendBtn {
-            margin-left: 10px;
-            background: linear-gradient(90deg, #8304e0, #b367ff);
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 16px;
-        }
-        .msg-actions {
-            position: absolute;
-            top: 5px;
-            right: 10px;
-            font-size: 14px;
-            color: #bbb;
-            user-select: none;
-            display: none;
-        }
-        .message:hover .msg-actions {
-            display: block;
-        }
-        .msg-action-btn {
-            margin-left: 8px;
-            cursor: pointer;
-            color: #aaa;
-        }
-        .msg-action-btn:hover {
-            color: #ff4d4d;
-        }
-        .reply-container {
-            margin-top: 8px;
-            border-left: 3px solid #555;
-            padding-left: 8px;
-            font-style: italic;
-            color: #999;
-        }
-        .edit-input {
-            width: 100%;
-            padding: 8px;
-            font-size: 16px;
-            border-radius: 6px;
-            border: none;
-            outline: none;
-            background: #333;
-            color: white;
-            box-sizing: border-box;
-            margin-top: 5px;
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>0PM</title>
+<style>
+    @keyframes rainbow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    @keyframes gold-gradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    body {
+        background: linear-gradient(135deg, #000000, #330033);
+        font-family: Arial, sans-serif;
+        color: white;
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    header {
+        background: #1a1a1a;
+        padding: 15px;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+        user-select: none;
+        border-bottom: 1px solid #444;
+        flex-shrink: 0;
+    }
+    #messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background: #111111;
+        box-sizing: border-box;
+        word-wrap: break-word;
+        position: relative;
+    }
+    .message {
+        margin: 5px 0;
+        padding: 10px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 6px;
+        white-space: pre-wrap;
+        position: relative;
+    }
+    .message .username {
+        font-weight: bold;
+        cursor: default;
+    }
+    .username-justin {
+        background: linear-gradient(270deg, red, orange, yellow, green, blue, indigo, violet);
+        background-size: 1400% 1400%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: rainbow 10s ease infinite;
+        display: inline-block;
+    }
+    .username-mason {
+        background: linear-gradient(270deg, black, gold, black);
+        background-size: 1400% 1400%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: gold-gradient 6s ease infinite;
+        display: inline-block;
+    }
+    .username-guest {
+        color: #ccc;
+        font-weight: bold;
+    }
+    #input-area {
+        display: flex;
+        padding: 10px;
+        background: #1a1a1a;
+        border-top: 1px solid #444;
+        box-sizing: border-box;
+        flex-shrink: 0;
+    }
+    #messageInput {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 6px;
+        outline: none;
+        font-size: 16px;
+        background: #2a2a2a;
+        color: white;
+    }
+    #sendBtn {
+        margin-left: 10px;
+        background: linear-gradient(90deg, #8304e0, #b367ff);
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 16px;
+    }
+    .msg-actions {
+        position: absolute;
+        top: 5px;
+        right: 10px;
+        font-size: 14px;
+        color: #bbb;
+        user-select: none;
+        display: none;
+    }
+    .message:hover .msg-actions {
+        display: block;
+    }
+    .msg-action-btn {
+        margin-left: 8px;
+        cursor: pointer;
+        color: #aaa;
+    }
+    .msg-action-btn:hover {
+        color: #ff4d4d;
+    }
+    .reply-container {
+        margin-top: 8px;
+        border-left: 3px solid #555;
+        padding-left: 8px;
+        font-style: italic;
+        color: #999;
+    }
+    .edit-input {
+        width: 100%;
+        padding: 8px;
+        font-size: 16px;
+        border-radius: 6px;
+        border: none;
+        outline: none;
+        background: #333;
+        color: white;
+        box-sizing: border-box;
+        margin-top: 5px;
+        resize: vertical;
+        min-height: 50px;
+        max-height: 150px;
+    }
+    #replyIndicator {
+        background: #222;
+        color: #ccc;
+        padding: 5px 10px;
+        border-top: 1px solid #444;
+        font-size: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    #replyIndicator button {
+        background: #8304e0;
+        border: none;
+        color: white;
+        border-radius: 6px;
+        cursor: pointer;
+        padding: 3px 10px;
+        font-size: 14px;
+    }
+    #jumpToPresentBtn {
+        position: fixed;
+        bottom: 70px;
+        right: 20px;
+        background: #8304e0;
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(131,4,224,0.7);
+        display: none;
+        user-select: none;
+        z-index: 1000;
+        transition: opacity 0.3s ease;
+    }
+    #jumpToPresentBtn:hover {
+        background: #b367ff;
+    }
+</style>
 </head>
 <body>
     <header>0PM</header>
     <div id="messages"></div>
+    <div id="replyIndicator" style="display:none"></div>
     <div id="input-area">
-        <input id="messageInput" type="text" placeholder="Type a message..." autocomplete="off" />
+        <textarea id="messageInput" placeholder="Type a message..." autocomplete="off" rows="2"></textarea>
         <button id="sendBtn">Send</button>
     </div>
+    <button id="jumpToPresentBtn" title="Jump to present">Jump to Present</button>
 
     <!-- Firebase Compat SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
+        // Firebase config
         const firebaseConfig = {
             apiKey: "AIzaSyC-9Hk4TBPi4WLb4anO-84FDpIfjH8X8HY",
             authDomain: "chatting-f1958.firebaseapp.com",
@@ -174,7 +225,7 @@
 
         const messagesRef = db.ref("messages");
 
-        // Safe chat bad words (simple version)
+        // Banned words list
         const bannedWords = [
             "fuck", "fvck", "fukk", "shit", "shyt", "bitch", "b1tch", "b!tch", "asshole", "a55hole", "a$$hole",
             "dick", "d1ck", "d!ck", "pussy", "pu55y", "p*ssy", "cock", "c0ck",
@@ -208,7 +259,6 @@
         let editingMessageId = null;
         let replyingToMessageId = null;
 
-        // Create message element with actions
         function createMessageElement(id, msgData) {
             const msgDiv = document.createElement("div");
             msgDiv.classList.add("message");
@@ -226,7 +276,6 @@
                     editInput.className = "edit-input";
                     editInput.value = msgData.text;
                     msgDiv.appendChild(editInput);
-
                     editInput.focus();
 
                     editInput.addEventListener("keydown", e => {
@@ -246,7 +295,6 @@
                     textSpan.textContent = msgData.text;
                     msgDiv.appendChild(textSpan);
 
-                    // Show reply if exists
                     if (msgData.replyTo) {
                         const replyDiv = document.createElement("div");
                         replyDiv.className = "reply-container";
@@ -254,7 +302,6 @@
                         msgDiv.appendChild(replyDiv);
                     }
 
-                    // Add action buttons if message user matches logged in user
                     if (msgData.user === username) {
                         const actionsDiv = document.createElement("div");
                         actionsDiv.className = "msg-actions";
@@ -297,29 +344,13 @@
                     }
                 }
             }
-
             renderContent();
             return msgDiv;
         }
 
-        // Reply indicator UI
         function updateReplyIndicator() {
-            let replyArea = document.getElementById("replyIndicator");
-            if (!replyArea) {
-                replyArea = document.createElement("div");
-                replyArea.id = "replyIndicator";
-                replyArea.style.background = "#222";
-                replyArea.style.color = "#ccc";
-                replyArea.style.padding = "5px 10px";
-                replyArea.style.borderTop = "1px solid #444";
-                replyArea.style.fontSize = "14px";
-                replyArea.style.display = "flex";
-                replyArea.style.justifyContent = "space-between";
-                replyArea.style.alignItems = "center";
-                document.body.insertBefore(replyArea, document.getElementById("input-area"));
-            }
+            const replyArea = document.getElementById("replyIndicator");
             if (replyingToMessageId) {
-                // fetch the replied message for display
                 messagesRef.child(replyingToMessageId).once("value").then(snapshot => {
                     const msg = snapshot.val();
                     if (!msg) {
@@ -327,14 +358,10 @@
                         updateReplyIndicator();
                         return;
                     }
+                    replyArea.style.display = "flex";
                     replyArea.textContent = `Replying to ${msg.user}: ${msg.text.length > 50 ? msg.text.slice(0,50) + "..." : msg.text}`;
                     const cancelBtn = document.createElement("button");
                     cancelBtn.textContent = "Cancel";
-                    cancelBtn.style.background = "#8304e0";
-                    cancelBtn.style.border = "none";
-                    cancelBtn.style.color = "white";
-                    cancelBtn.style.borderRadius = "6px";
-                    cancelBtn.style.cursor = "pointer";
                     cancelBtn.onclick = () => {
                         replyingToMessageId = null;
                         updateReplyIndicator();
@@ -343,6 +370,7 @@
                 });
             } else {
                 replyArea.style.display = "none";
+                replyArea.textContent = "";
             }
         }
 
@@ -359,7 +387,6 @@
             };
 
             if (replyingToMessageId) {
-                // Attach reply info
                 messagesRef.child(replyingToMessageId).once("value").then(snapshot => {
                     const replyMsg = snapshot.val();
                     if (replyMsg) {
@@ -372,21 +399,51 @@
                     input.value = "";
                     replyingToMessageId = null;
                     updateReplyIndicator();
+                    scrollToBottom();
                 });
             } else {
                 messagesRef.push(messageData);
                 input.value = "";
+                scrollToBottom();
             }
         }
 
         const messagesDiv = document.getElementById("messages");
+        const jumpBtn = document.getElementById("jumpToPresentBtn");
+
+        function scrollToBottom() {
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Manage Jump to Present button visibility
+        function checkScroll() {
+            const nearBottom = messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight < 50;
+            if (nearBottom) {
+                jumpBtn.style.display = "none";
+            } else {
+                jumpBtn.style.display = "block";
+            }
+        }
+
+        messagesDiv.addEventListener("scroll", checkScroll);
+        jumpBtn.addEventListener("click", () => {
+            scrollToBottom();
+            jumpBtn.style.display = "none";
+            document.getElementById("messageInput").focus();
+        });
 
         messagesRef.on("child_added", snapshot => {
             const id = snapshot.key;
             const msg = snapshot.val();
             const msgEl = createMessageElement(id, msg);
             messagesDiv.appendChild(msgEl);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            if (editingMessageId !== id) {
+                // auto-scroll only if near bottom
+                const nearBottom = messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight < 100;
+                if (nearBottom) {
+                    scrollToBottom();
+                }
+            }
         });
 
         messagesRef.on("child_changed", snapshot => {
@@ -394,7 +451,6 @@
             const msg = snapshot.val();
             const msgEl = messagesDiv.querySelector(`[data-id="${id}"]`);
             if (msgEl) {
-                // Re-render message element (preserving actions)
                 const newEl = createMessageElement(id, msg);
                 messagesDiv.replaceChild(newEl, msgEl);
             }
@@ -409,13 +465,31 @@
         });
 
         document.getElementById("sendBtn").addEventListener("click", sendMessage);
-        document.getElementById("messageInput").addEventListener("keypress", e => {
+        document.getElementById("messageInput").addEventListener("keydown", e => {
             if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 sendMessage();
+            } else if (e.key === "Escape" && editingMessageId) {
+                editingMessageId = null;
+                // rerender all messages to exit edit mode
+                messagesDiv.querySelectorAll(".message").forEach(msgEl => {
+                    const id = msgEl.dataset.id;
+                    messagesRef.child(id).once("value").then(snapshot => {
+                        const msg = snapshot.val();
+                        if (msg) {
+                            const newEl = createMessageElement(id, msg);
+                            messagesDiv.replaceChild(newEl, msgEl);
+                        }
+                    });
+                });
             }
         });
 
+        // Initial scroll to bottom on load
+        window.onload = () => {
+            setTimeout(scrollToBottom, 100);
+            updateReplyIndicator();
+        };
     </script>
 </body>
 </html>
