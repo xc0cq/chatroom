@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Chat Room</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #000000, #8304e0);
+      font-family: Arial, sans-serif;
+      color: white;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    #onlineUsers {
+      background: #1a1a1a;
+      padding: 6px 12px;
+      font-size: 0.9em;
+      border-bottom: 1px solid #444;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    #onlineUsers span {
+      background: #8304e0aa;
+      border-radius: 12px;
+      padding: 2px 10px;
+      user-select: none;
+      font-weight: bold;
+    }
+    #messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.15);
+    }
+    .message {
+      margin: 5px 0;
+      padding: 10px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 6px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .message .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .message .username {
+      font-weight: bold;
+      cursor: default;
+    }
+    .message .timestamp {
+      font-size: 0.75em;
+      color: #bbb;
+      margin-left: 8px;
+      white-space: nowrap;
+    }
+    .message .actions {
+      display: flex;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      flex-wrap: wrap;
+    }
+    .message:hover .actions {
+      opacity: 1;
+    }
+    .message .actions button {
+      background: transparent;
+      border: none;
+      color: #ccc;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .message .reply-quote {
+      font-size: 0.9em;
+      color: #aaa;
+      border-left: 3px solid #8304e0;
+      padding-left: 8px;
+      margin-bottom: 5px;
+      font-style: italic;
+    }
+    .message .text {
+      margin-top: 6px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      cursor: default;
+    }
+    .message .edited {
+      font-size: 0.75em;
+      color: #888;
+      margin-left: 6px;
+      font-style: italic;
+    }
+    .reactions {
+      margin-top: 8px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .reaction {
+      background: rgba(51,51,51,0.7);
+      border-radius: 12px;
+      padding: 2px 8px;
+      font-size: 14px;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: white;
+      position: relative;
+    }
+    .reaction.self {
+      background: #6b47ff;
+    }
+    .reaction .tooltip {
+      visibility: hidden;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 4px 8px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+      font-size: 0.8em;
+    }
+    .reaction:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    #input-area {
+      display: flex;
+      padding: 10px;
+      background: #1a1a1a;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    #replyingTo {
+      flex-basis: 100%;
+      margin-bottom: 6px;
+      font-style: italic;
+      color: #8304e0;
+      user-select: none;
+    }
+    #typingIndicator {
+      flex-basis: 100%;
+      font-style: italic;
+      color: #ccc;
+      height: 20px;
+      margin-left: 10px;
+      min-height: 20px;
+      user-select: none;
+    }
+    #messageInput {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      outline: none;
+      background: #2a2a2a;
+      color: white;
+      resize: none;
+      min-height: 40px;
+    }
+    #input-area button {
+      margin-left: 10px;
+      background: linear-gradient(90deg, #5302b8, #8304e0);
+      border: none;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #cancelEditBtn {
+      background: #a83232 !important;
+    }
+
+    /* Edit history modal */
+    #historyModal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 0 20px #8304e0cc;
+      max-width: 90vw;
+      max-height: 70vh;
+      overflow-y: auto;
+      display: none;
+      z-index: 9999;
+      color: white;
+    }
+    #historyModal h3 {
+      margin-top: 0;
+      color: #8304e0;
+    }
+    #historyModal button.close {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    #historyList {
+      margin-top: 10px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 50vh;
+      overflow-y: auto;
+      background: #111;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    /* gradient username styles */
+    @keyframes rainbowShift {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+    @keyframes goldBlackShift {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+    .gradient-rainbow {
+      background: linear-gradient(270deg, red, orange, yellow, green, blue, indigo, violet, red);
+      background-size: 1400% 1400%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: bold;
+      animation: rainbowShift 6s ease infinite;
+    }
+    .gradient-goldblack {
+      background: linear-gradient(270deg, #FFD700, #000000, #FFD700);
+      background-size: 600% 600%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: bold;
+      animation: goldBlackShift 5s ease infinite;
+    }
+  </style>
+</head>
+<body>
+  <div id="onlineUsers">Online: <span id="onlineList">Loading...</span></div>
+  <div id="messages"></div>
+
+  <div id="input-area">
+    <div id="replyingTo" style="display:none;"></div>
+    <textarea id="messageInput" placeholder="Type a message..." rows="2"></textarea>
+    <button id="sendBtn">Send</button>
+    <button id="cancelEditBtn" style="display:none; margin-left:10px;">Cancel Edit</button>
+    <div id="typingIndicator"></div>
+  </div>
+
+  <div id="historyModal" role="dialog" aria-modal="true">
+    <button class="close" title="Close">&times;</button>
+    <h3>Edit History</h3>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- Firebase Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <script>
+    // Firebase config (kept as you had it)
+    const firebaseConfig = {
+      apiKey: "AIzaSyC-9Hk4TBPi4WLb4anO-84FDpIfjH8X8HY",
+      authDomain: "chatting-f1958.firebaseapp.com",
+      databaseURL: "https://chatting-f1958-default-rtdb.firebaseio.com",
+      projectId: "chatting-f1958",
+      storageBucket: "chatting-f1958.appspot.com",
+      messagingSenderId: "308400029505",
+      appId: "1:308400029505:web:a265599a58f1881e83abc0"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const messagesRef = db.ref("messages");
+    const typingRef = db.ref("typing");
+    const presenceRef = db.ref("presence");
+
+    const username = localStorage.getItem("chatUser");
+    if (!username) {
+      window.location.href = "index.html";
+    }
+
+    // Admin users (can delete any message)
+    const adminUsers = ["admin"];
+
+    // Gradient classes mapping (lowercase keys)
+    const userGradientClasses = {
+      "justin": "gradient-rainbow",
+      "mason": "gradient-goldblack"
+    };
+
+    // DOM refs
+    const messagesDiv = document.getElementById("messages");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+    const replyingToDiv = document.getElementById("replyingTo");
+    const typingIndicator = document.getElementById("typingIndicator");
+    const onlineListSpan = document.getElementById("onlineList");
+
+    const historyModal = document.getElementById("historyModal");
+    const historyList = document.getElementById("historyList");
+    const closeHistoryBtn = historyModal.querySelector("button.close");
+
+    // State
+    let editingMessageId = null;
+    let replyingToMessage = null;
+    let typingTimeout = null;
+
+    // Presence: set online and remove on disconnect
+    (function setPresence(){
+      const myPresenceRef = presenceRef.child(username);
+      myPresenceRef.set(true);
+      myPresenceRef.onDisconnect().remove();
+    })();
+
+    // Listen for presence updates
+    presenceRef.on("value", snapshot => {
+      const users = snapshot.val() || {};
+      const onlineUsers = Object.keys(users);
+      if (onlineUsers.length === 0) {
+        onlineListSpan.textContent = "No one online";
+      } else {
+        onlineListSpan.innerHTML = onlineUsers.map(u => {
+          const cls = userGradientClasses[u.toLowerCase()] || "";
+          // escape username into text node by building span then using innerHTML for simplicity
+          return `<span class="${cls}">${u}</span>`;
+        }).join(", ");
+      }
+    });
+
+    // Typing indicator handling
+    messageInput.addEventListener("input", () => {
+      typingRef.child(username).set(true);
+      if (typingTimeout) clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        typingRef.child(username).remove();
+      }, 1500);
+    });
+
+    typingRef.on("value", snapshot => {
+      const typingUsers = snapshot.val() || {};
+      const others = Object.keys(typingUsers).filter(u => u !== username);
+      if (others.length === 0) {
+        typingIndicator.textContent = "";
+      } else if (others.length === 1) {
+        typingIndicator.textContent = `${others[0]} is typing...`;
+      } else {
+        typingIndicator.textContent = "Multiple users are typing...";
+      }
+    });
+
+    // Send / Edit actions
+    sendBtn.addEventListener("click", () => {
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      if (editingMessageId) {
+        // Save edit and add to history
+        messagesRef.child(editingMessageId).once("value").then(snap => {
+          const old = snap.val() || {};
+          const history = old.history || [];
+          history.push({ text: old.text, timestamp: old.timestamp || Date.now() });
+          messagesRef.child(editingMessageId).update({
+            text: text,
+            edited: true,
+            history: history,
+            timestamp: Date.now(),
+            replyTo: replyingToMessage ? replyingToMessage.id : null
+          });
+          clearInputState();
+        });
+      } else {
+        // New message
+        messagesRef.push({
+          user: username,
+          text: text,
+          timestamp: Date.now(),
+          replyTo: replyingToMessage ? replyingToMessage.id : null,
+          reactions: {}
+        });
+        clearInputState();
+      }
+    });
+
+    cancelEditBtn.addEventListener("click", clearInputState);
+
+    function clearInputState() {
+      editingMessageId = null;
+      replyingToMessage = null;
+      messageInput.value = "";
+      sendBtn.textContent = "Send";
+      cancelEditBtn.style.display = "none";
+      replyingToDiv.style.display = "none";
+      replyingToDiv.textContent = "";
+    }
+
+    // Store message elements and data
+    const messageElements = {};
+
+    function getGradientClass(user) {
+      return userGradientClasses[user.toLowerCase()] || "";
+    }
+
+    function formatTimestamp(ts) {
+      if (!ts) return "";
+      const d = new Date(ts);
+      return d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+
+    // Render a single message (child_added)
+    function renderMessage(snapshot) {
+      const raw = snapshot.val();
+      if (!raw) return;
+      const msg = Object.assign({}, raw);
+      msg.id = snapshot.key;
+
+      // Build DOM
+      const msgDiv = document.createElement("div");
+      msgDiv.className = "message";
+      msgDiv.id = "msg-" + msg.id;
+
+      // Reply quote if present and available
+      if (msg.replyTo && messageElements[msg.replyTo]) {
+        const replyMsg = messageElements[msg.replyTo].msgData;
+        const replyQuote = document.createElement("div");
+        replyQuote.className = "reply-quote";
+        replyQuote.textContent = `↳ ${replyMsg.user}: ${replyMsg.text.length > 40 ? replyMsg.text.slice(0,40) + "..." : replyMsg.text}`;
+        msgDiv.appendChild(replyQuote);
+      }
+
+      const topRow = document.createElement("div");
+      topRow.className = "top-row";
+
+      const userSpan = document.createElement("span");
+      userSpan.className = "username";
+      userSpan.textContent = msg.user;
+      const g = getGradientClass(msg.user);
+      if (g) userSpan.classList.add(g);
+
+      topRow.appendChild(userSpan);
+
+      const timeSpan = document.createElement("span");
+      timeSpan.className = "timestamp";
+      timeSpan.textContent = formatTimestamp(msg.timestamp);
+      topRow.appendChild(timeSpan);
+
+      msgDiv.appendChild(topRow);
+
+      const textDiv = document.createElement("div");
+      textDiv.className = "text";
+      textDiv.textContent = msg.text;
+      msgDiv.appendChild(textDiv);
+
+      if (msg.edited) {
+        const editedSpan = document.createElement("span");
+        editedSpan.className = "edited";
+        editedSpan.textContent = " (edited)";
+        textDiv.appendChild(editedSpan);
+      }
+
+      // Reactions section
+      const reactionsDiv = document.createElement("div");
+      reactionsDiv.className = "reactions";
+
+      const reactions = msg.reactions || {};
+      Object.entries(reactions).forEach(([emoji, usersObj]) => {
+        const users = usersObj || {};
+        const count = Object.keys(users).length;
+        const youReacted = !!users[username];
+
+        const reactionBtn = document.createElement("div");
+        reactionBtn.className = "reaction";
+        if (youReacted) reactionBtn.classList.add("self");
+        reactionBtn.textContent = `${emoji} ${count}`;
+
+        const tooltip = document.createElement("span");
+        tooltip.className = "tooltip";
+        tooltip.textContent = Object.keys(users).join(", ");
+        reactionBtn.appendChild(tooltip);
+
+        reactionBtn.onclick = () => toggleReaction(msg.id, emoji, youReacted);
+        reactionsDiv.appendChild(reactionBtn);
+      });
+
+      // Add reaction button
+      const addReactionBtn = document.createElement("div");
+      addReactionBtn.className = "reaction";
+      addReactionBtn.textContent = "+";
+      addReactionBtn.title = "Add reaction";
+      addReactionBtn.onclick = () => promptAddReaction(msg.id);
+      reactionsDiv.appendChild(addReactionBtn);
+
+      msgDiv.appendChild(reactionsDiv);
+
+      // Actions (reply, edit, delete, history)
+      const actionsDiv = document.createElement("div");
+      actionsDiv.className = "actions";
+
+      // Reply (everyone)
+      const replyBtn = document.createElement("button");
+      replyBtn.textContent = "Reply";
+      replyBtn.title = "Reply to message";
+      replyBtn.onclick = () => startReplyMessage(msg);
+      actionsDiv.appendChild(replyBtn);
+
+      // Edit (only owner)
+      if (msg.user === username) {
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Edit";
+        editBtn.title = "Edit message";
+        editBtn.onclick = () => startEditMessage(msg.id);
+        actionsDiv.appendChild(editBtn);
+      }
+
+      // Delete (owner or admin)
+      if (msg.user === username || adminUsers.includes(username.toLowerCase())) {
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "Delete";
+        delBtn.title = "Delete message";
+        delBtn.onclick = () => deleteMessage(msg.id);
+        actionsDiv.appendChild(delBtn);
+      }
+
+      // History (if edited)
+      if (msg.edited && Array.isArray(msg.history) && msg.history.length > 0) {
+        const histBtn = document.createElement("button");
+        histBtn.textContent = "History";
+        histBtn.title = "Show edit history";
+        histBtn.onclick = () => showHistory(msg.history);
+        actionsDiv.appendChild(histBtn);
+      }
+
+      msgDiv.appendChild(actionsDiv);
+
+      messagesDiv.appendChild(msgDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+      // Save element and data
+      messageElements[msg.id] = { element: msgDiv, msgData: msg };
+    }
+
+    // Update message on child_changed
+    function updateMessage(snapshot) {
+      const raw = snapshot.val();
+      if (!raw) return;
+      const msg = Object.assign({}, raw);
+      msg.id = snapshot.key;
+
+      const stored = messageElements[msg.id];
+      if (!stored) {
+        // If not rendered yet, render fresh
+        renderMessage(snapshot);
+        return;
+      }
+
+      stored.msgData = msg;
+      const msgDiv = stored.element;
+
+      // Update reply quote
+      const existingQuote = msgDiv.querySelector(".reply-quote");
+      if (msg.replyTo) {
+        if (!existingQuote && messageElements[msg.replyTo]) {
+          const replyMsg = messageElements[msg.replyTo].msgData;
+          const newQuote = document.createElement("div");
+          newQuote.className = "reply-quote";
+          newQuote.textContent = `↳ ${replyMsg.user}: ${replyMsg.text.length > 40 ? replyMsg.text.slice(0,40) + "..." : replyMsg.text}`;
+          msgDiv.insertBefore(newQuote, msgDiv.firstChild);
+        } else if (existingQuote && messageElements[msg.replyTo]) {
+          const replyMsg = messageElements[msg.replyTo].msgData;
+          existingQuote.textContent = `↳ ${replyMsg.user}: ${replyMsg.text.length > 40 ? replyMsg.text.slice(0,40) + "..." : replyMsg.text}`;
+        }
+      } else {
+        if (existingQuote) existingQuote.remove();
+      }
+
+      // Update username/gradient
+      const userSpan = msgDiv.querySelector(".username");
+      if (userSpan) {
+        userSpan.textContent = msg.user;
+        userSpan.className = "username " + (getGradientClass(msg.user) || "");
+      }
+
+      // Update timestamp
+      const timeSpan = msgDiv.querySelector(".timestamp");
+      if (timeSpan) timeSpan.textContent = formatTimestamp(msg.timestamp);
+
+      // Update text and edited label
+      const textDiv = msgDiv.querySelector(".text");
+      if (textDiv) {
+        // clear then set content
+        textDiv.textContent = msg.text;
+        if (msg.edited) {
+          const editedSpan = document.createElement("span");
+          editedSpan.className = "edited";
+          editedSpan.textContent = " (edited)";
+          textDiv.appendChild(editedSpan);
+        }
+      }
+
+      // Update reactions: rebuild reactions div
+      const reactionsDiv = msgDiv.querySelector(".reactions");
+      if (reactionsDiv) {
+        reactionsDiv.innerHTML = "";
+        const reactions = msg.reactions || {};
+        Object.entries(reactions).forEach(([emoji, usersObj]) => {
+          const users = usersObj || {};
+          const count = Object.keys(users).length;
+          const youReacted = !!users[username];
+          const reactionBtn = document.createElement("div");
+          reactionBtn.className = "reaction";
+          if (youReacted) reactionBtn.classList.add("self");
+          reactionBtn.textContent = `${emoji} ${count}`;
+          const tooltip = document.createElement("span");
+          tooltip.className = "tooltip";
+          tooltip.textContent = Object.keys(users).join(", ");
+          reactionBtn.appendChild(tooltip);
+          reactionBtn.onclick = () => toggleReaction(msg.id, emoji, youReacted);
+          reactionsDiv.appendChild(reactionBtn);
+        });
+        // add reaction + button
+        const addReactionBtn = document.createElement("div");
+        addReactionBtn.className = "reaction";
+        addReactionBtn.textContent = "+";
+        addReactionBtn.title = "Add reaction";
+        addReactionBtn.onclick = () => promptAddReaction(msg.id);
+        reactionsDiv.appendChild(addReactionBtn);
+      }
+
+      // Update actions area (history may have changed)
+      const actionsDiv = msgDiv.querySelector(".actions");
+      if (actionsDiv) {
+        // rebuild minimal: keep reply/edit/delete but add/remove history button
+        actionsDiv.innerHTML = "";
+
+        const replyBtn = document.createElement("button");
+        replyBtn.textContent = "Reply";
+        replyBtn.title = "Reply to message";
+        replyBtn.onclick = () => startReplyMessage(msg);
+        actionsDiv.appendChild(replyBtn);
+
+        if (msg.user === username) {
+          const editBtn = document.createElement("button");
+          editBtn.textContent = "Edit";
+          editBtn.title = "Edit message";
+          editBtn.onclick = () => startEditMessage(msg.id);
+          actionsDiv.appendChild(editBtn);
+        }
+
+        if (msg.user === username || adminUsers.includes(username.toLowerCase())) {
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "Delete";
+          delBtn.title = "Delete message";
+          delBtn.onclick = () => deleteMessage(msg.id);
+          actionsDiv.appendChild(delBtn);
+        }
+
+        if (msg.edited && Array.isArray(msg.history) && msg.history.length > 0) {
+          const histBtn = document.createElement("button");
+          histBtn.textContent = "History";
+          histBtn.title = "Show edit history";
+          histBtn.onclick = () => showHistory(msg.history);
+          actionsDiv.appendChild(histBtn);
+        }
+      }
+    }
+
+    function removeMessage(snapshot) {
+      const id = snapshot.key;
+      const stored = messageElements[id];
+      if (!stored) return;
+      stored.element.remove();
+      delete messageElements[id];
+      if (editingMessageId === id) clearInputState();
+      if (replyingToMessage && replyingToMessage.id === id) clearInputState();
+    }
+
+    function startEditMessage(id) {
+      const stored = messageElements[id];
+      if (!stored) return;
+      const msg = stored.msgData;
+      editingMessageId = id;
+      replyingToMessage = null;
+      messageInput.value = msg.text || "";
+      messageInput.focus();
+      sendBtn.textContent = "Save";
+      cancelEditBtn.style.display = "inline-block";
+      replyingToDiv.style.display = "none";
+      replyingToDiv.textContent = "";
+    }
+
+    function deleteMessage(id) {
+      if (confirm("Delete this message?")) {
+        messagesRef.child(id).remove();
+      }
+    }
+
+    function startReplyMessage(msg) {
+      replyingToMessage = msg;
+      editingMessageId = null;
+      replyingToDiv.style.display = "block";
+      replyingToDiv.textContent = `Replying to ${msg.user}: "${msg.text.length > 80 ? msg.text.slice(0,80) + '...' : msg.text}"`;
+      messageInput.focus();
+      sendBtn.textContent = "Send";
+      cancelEditBtn.style.display = "none";
+    }
+
+    function toggleReaction(messageId, emoji, reacted) {
+      const path = messagesRef.child(messageId).child("reactions").child(emoji).child(username);
+      if (reacted) {
+        path.remove();
+      } else {
+        path.set(true);
+      }
+    }
+
+    function promptAddReaction(messageId) {
+      const emoji = prompt("Enter an emoji to react with (e.g. 😊, 👍, ❤️):");
+      if (!emoji) return;
+      messagesRef.child(messageId).child("reactions").child(emoji).child(username).set(true);
+    }
+
+    function showHistory(historyArray) {
+      historyList.innerHTML = "";
+      if (!Array.isArray(historyArray) || historyArray.length === 0) {
+        historyList.textContent = "No history available.";
+      } else {
+        historyArray.slice().reverse().forEach(h => {
+          const time = h.timestamp ? new Date(h.timestamp).toLocaleString() : "Unknown time";
+          const p = document.createElement("div");
+          p.textContent = `${time}: ${h.text}`;
+          p.style.padding = "6px 0";
+          historyList.appendChild(p);
+        });
+      }
+      historyModal.style.display = "block";
+    }
+
+    // Close history modal
+    closeHistoryBtn.addEventListener("click", () => {
+      historyModal.style.display = "none";
+    });
+
+    // Firebase listeners
+    messagesRef.on("child_added", renderMessage);
+    messagesRef.on("child_changed", updateMessage);
+    messagesRef.on("child_removed", removeMessage);
+
+  </script>
+</body>
+</html>
