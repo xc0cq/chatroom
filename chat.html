@@ -354,6 +354,15 @@
     const onlineListSpan = document.getElementById("onlineList");
 
     const historyModal = document.getElementById("historyModal");
+
+    // Allow Enter to send message, Shift+Enter for newline
+    messageInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendBtn.click();
+      }
+    });
+
     const historyList = document.getElementById("historyList");
     const closeHistoryBtn = historyModal.querySelector("button.close");
 
